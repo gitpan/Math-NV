@@ -1,0 +1,13 @@
+MANIFEST
+Changes
+NV.pm
+NV.xs
+Makefile.PL
+t/01load.t
+t/02ctonv.t
+t/03ctonv_ld.t
+t/04mpfr_str_checks.t
+t/05mpfr_nv_checks.t
+t/69659e-292.t
+t/pod.t
+
