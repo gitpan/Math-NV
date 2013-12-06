@@ -1,4 +1,5 @@
 MANIFEST
+README
 Changes
 NV.pm
 NV.xs
@@ -8,6 +9,10 @@ t/02ctonv.t
 t/03ctonv_ld.t
 t/04mpfr_str_checks.t
 t/05mpfr_nv_checks.t
+t/06is_eq.t
+t/07mant2binary.t
+t/08compiler_bugs.t
+t/09list_context.t
 t/69659e-292.t
 t/pod.t
 

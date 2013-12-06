@@ -29,7 +29,7 @@ if($nv == nv('1e-298')) {
 }
 else {
   warn "1. Perl thinks that 1e-298 looks like ", float_hex($nv), "\n";
-  warn "1. C    thinks that 1e-298 looks like ", float_hex(nv('1e-298')), "\n";
+  warn "1. C    thinks that 1e-298 looks like ", float_hex(scalar nv('1e-298')), "\n";
   $needed = 1;
 }
 
@@ -49,7 +49,7 @@ else {
   $needed = 1;
 }
 
-if(float_hex(nv("1e-298")) eq $correct) {print "ok 1\n"}
+if(float_hex(scalar nv("1e-298")) eq $correct) {print "ok 1\n"}
 else {
   warn "\$nv: $nv ", float_hex($nv), "\n";
   warn "nv(\$nv): ", nv("$nv"), " ", float_hex(nv("$nv")), "\n";
@@ -71,10 +71,9 @@ if($ok) {
     for my $digits(1..15) {
       $tests++;
       my $nv = random_select($digits) . 'e' . "-$exp";
-      #warn float_hex($nv), " ", float_hex(nv($nv)), "\n";
-      if(float_hex($nv) ne float_hex(nv($nv))) {
+      if(float_hex($nv) ne float_hex(scalar nv($nv))) {
         print "\$nv: $nv\n";
-        print "perl: ", float_hex($nv), " nv: ", float_hex(nv($nv)), "\n\n";
+        print "perl: ", float_hex($nv), " nv: ", float_hex(scalar nv($nv)), "\n\n";
         $count++;
       }
       else {print "\$nv: $nv ok\n\n";}

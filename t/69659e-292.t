@@ -34,7 +34,7 @@ if($nv == nv('69659e-292')) {
 }
 else {
   warn "1. Perl thinks that 69659e-292 looks like ", float_hex($nv), "\n";
-  warn "1. C    thinks that 69659e-292 looks like ", float_hex(nv('69659e-292')), "\n";
+  warn "1. C    thinks that 69659e-292 looks like ", float_hex(scalar nv('69659e-292')), "\n";
   $needed = 1;
 }
 
@@ -54,10 +54,10 @@ else {
   $needed = 1;
 }
 
-if(float_hex(nv("69659e-292")) eq $correct) {print "ok 1\n"}
+if(float_hex(scalar nv("69659e-292")) eq $correct) {print "ok 1\n"}
 else {
   warn "\$nv: $nv ", float_hex($nv), "\n";
-  warn "nv(\$nv): ", nv("$nv"), " ", float_hex(nv("$nv")), "\n";
+  warn "nv(\$nv): ", nv("$nv"), " ", float_hex(scalar nv("$nv")), "\n";
   $ok = 0;
   print "not ok 1\n";
 }

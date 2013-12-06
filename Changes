@@ -1,3 +1,13 @@
+Revision history for Perl module Math::NV
 
-0.01
- - First release to CPAN.
+0.02 
+    - Add 08compiler_bugs.t and 09list_context.t.
+    - Add is_eq(), mant2binary() and mant_str2binary() functions,
+      along with test scripts 06is_eq.t and 07mant2binary.t.
+    - Rewrite 04mpfr_str_checks.t and 05mpfr_nv_checks.t.
+    - nv() can now be called in either scalar or array context,
+      like POSIX::strtod().
+
+0.01 2013-11-01
+    - First release to CPAN
+

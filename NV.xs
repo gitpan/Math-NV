@@ -20,13 +20,27 @@
 #endif
 #endif
 
-SV * nv(char * str) {
-   char *ptr;
+void nv(char * str) {
+   dXSARGS;
+   char * unparsed;
 #ifdef NV_IS_LONG_DOUBLE
-   return newSVnv(strtold(str, &ptr));
+   long double num;
+   num = strtold(str, &unparsed);
 #else
-   return newSVnv(strtod (str, &ptr));
+   double num;
+   num = strtod (str, &unparsed);
 #endif
+
+   ST(0) = sv_2mortal(newSVnv(num));
+   if(GIMME == G_ARRAY) {
+     EXTEND(SP, 1);
+     if(unparsed)
+       ST(1) = sv_2mortal(newSViv(strlen(unparsed)));
+     else
+       ST(1) = sv_2mortal(newSViv(0));
+     XSRETURN(2);
+   }
+   XSRETURN(1);
 }
 
 SV * nv_type(void) {
@@ -230,16 +244,41 @@ void _ld_str2binary (char * ld, long flag) {
   XSRETURN(returns);
 }
 
+SV * _bug_95e20(void) {
+#ifdef NV_IS_LONG_DOUBLE
+  return newSVnv(95e20L);
+#else
+  return newSVnv(95e20);
+#endif
+}
 
-
+SV * _bug_1175557635e10(void) {
+#ifdef NV_IS_LONG_DOUBLE
+  return newSVnv(1175557635e10L);
+#else
+  return newSVnv(1175557635e10);
+#endif
+}
 MODULE = Math::NV	PACKAGE = Math::NV	
 
 PROTOTYPES: DISABLE
 
 
-SV *
+void
 nv (str)
 	char *	str
+	PREINIT:
+	I32* temp;
+	PPCODE:
+	temp = PL_markstack_ptr++;
+	nv(str);
+	if (PL_markstack_ptr != temp) {
+          /* truly void, because dXSARGS not invoked */
+	  PL_markstack_ptr = temp;
+	  XSRETURN_EMPTY; /* return empty stack */
+        }
+        /* must have used dXSARGS; list context implied */
+	return; /* assume stack size is correct */
 
 SV *
 nv_type ()
@@ -282,4 +321,12 @@ _ld_str2binary (ld, flag)
         }
         /* must have used dXSARGS; list context implied */
 	return; /* assume stack size is correct */
+
+SV *
+_bug_95e20 ()
+		
+
+SV *
+_bug_1175557635e10 ()
+		
 
