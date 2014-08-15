@@ -17,6 +17,17 @@ my %options = %{
   ],
   'INC' => '',
   'DEFINE' => $defines,
+  'LICENSE'  => 'perl',
+  META_MERGE => {
+   'meta-spec' => { version => 2 },
+    resources => {
+      repository => {
+        type => 'git',
+        url => 'https://github.com/sisyphus/math-nv.git',
+        web => 'https://github.com/sisyphus/math-nv',
+      },
+    },
+  },
 }
 };
 WriteMakefile(%options);

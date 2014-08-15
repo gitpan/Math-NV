@@ -2,10 +2,8 @@
 Perl fails to assign many floating point values correctly ... and by "many", I mean millions.
 (Perhaps there are some platforms where this is not the case, but I don't know of any.)
 
-The errors are not huge, and they apply generally to values in a range in which very few people
-work - many people are not concerned about them.
-For example, on my Ubuntu-12.04 system, I've not found any errors in the range 1e-23 .. 3e23. That's 
-not to say no such errors exist inside that range.
+The errors are not huge (generally off-by-one or off-by-two errors), and many people are not concerned
+about them.
 
 Anyway, this module just provides a few functions for examining the values, and an nv() function that
 assigns the values via the C compiler/libc.

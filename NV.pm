@@ -7,7 +7,7 @@ require Exporter;
 *import = \&Exporter::import;
 require DynaLoader;
 
-$Math::NV::VERSION = '0.02';
+$Math::NV::VERSION = '0.03';
 
 DynaLoader::bootstrap Math::NV $Math::NV::VERSION;
 
@@ -80,7 +80,7 @@ Math::NV - assign correct value to perl's NV
    were unparsed.
 
    The nv() function assigns the value at the C (XS) level using
-   either the C function strtod() or strtold() - whichever is 
+   either the C function strtod() or strtold() - whichever is
    appropriate for your perl's configuration.
 
    Obviously, we are therefore relying upon absence of bugs in the

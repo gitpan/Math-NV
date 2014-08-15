@@ -5,6 +5,7 @@
 #endif
 #endif
 
+#define PERL_NO_GET_CONTEXT 1
 
 #include "EXTERN.h"
 #include "perl.h"
@@ -20,7 +21,7 @@
 #endif
 #endif
 
-void nv(char * str) {
+void nv(pTHX_ char * str) {
    dXSARGS;
    char * unparsed;
 #ifdef NV_IS_LONG_DOUBLE
@@ -43,19 +44,20 @@ void nv(char * str) {
    XSRETURN(1);
 }
 
-SV * nv_type(void) {
+SV * nv_type(pTHX) {
 #ifdef NV_IS_LONG_DOUBLE
    return newSVpv("long double", 0);
 #else
    return newSVpv("double", 0);
+
 #endif
 }
 
-SV * mant_dig(void) {
+unsigned long mant_dig(void) {
 #ifdef NV_IS_LONG_DOUBLE
-   return newSVuv(LDBL_MANT_DIG);
+   return LDBL_MANT_DIG;
 #else
-   return newSVuv(DBL_MANT_DIG);
+   return DBL_MANT_DIG;
 #endif
 }
 
@@ -69,7 +71,7 @@ int Isnan_ld (long double d) {
    tests/tset_ld.c in the mpfr library source.
 ********************************************************/
 
-void _ld2binary (SV * ld, long flag) {
+void _ld2binary (pTHX_ SV * ld, long flag) {
 
   dXSARGS;
   long double d = SvNV(ld);
@@ -132,7 +134,7 @@ void _ld2binary (SV * ld, long flag) {
   /* now e <= d < 2e */
   XPUSHs(sv_2mortal(newSVpv("0.", 0)));
   returns ++;
-  
+
   if (flag) printf ("3: d=%.36Le e=%.36Le prec=%lu\n", d, e, prec);
   while (d > (long double) 0.0) {
       prec++;
@@ -155,7 +157,7 @@ void _ld2binary (SV * ld, long flag) {
   XSRETURN(returns);
 }
 
-void _ld_str2binary (char * ld, long flag) {
+void _ld_str2binary (pTHX_ char * ld, long flag) {
 
   dXSARGS;
   long double d;
@@ -221,7 +223,7 @@ void _ld_str2binary (char * ld, long flag) {
   /* now e <= d < 2e */
   XPUSHs(sv_2mortal(newSVpv("0.", 0)));
   returns ++;
-  
+
   if (flag) printf ("3: d=%.36Le e=%.36Le prec=%lu\n", d, e, prec);
   while (d > (long double) 0.0) {
       prec++;
@@ -244,7 +246,7 @@ void _ld_str2binary (char * ld, long flag) {
   XSRETURN(returns);
 }
 
-SV * _bug_95e20(void) {
+SV * _bug_95e20(pTHX) {
 #ifdef NV_IS_LONG_DOUBLE
   return newSVnv(95e20L);
 #else
@@ -252,14 +254,14 @@ SV * _bug_95e20(void) {
 #endif
 }
 
-SV * _bug_1175557635e10(void) {
+SV * _bug_1175557635e10(pTHX) {
 #ifdef NV_IS_LONG_DOUBLE
   return newSVnv(1175557635e10L);
 #else
   return newSVnv(1175557635e10);
 #endif
 }
-MODULE = Math::NV	PACKAGE = Math::NV	
+MODULE = Math::NV  PACKAGE = Math::NV
 
 PROTOTYPES: DISABLE
 
@@ -267,66 +269,75 @@ PROTOTYPES: DISABLE
 void
 nv (str)
 	char *	str
-	PREINIT:
-	I32* temp;
-	PPCODE:
-	temp = PL_markstack_ptr++;
-	nv(str);
-	if (PL_markstack_ptr != temp) {
+        PREINIT:
+        I32* temp;
+        PPCODE:
+        temp = PL_markstack_ptr++;
+        nv(aTHX_ str);
+        if (PL_markstack_ptr != temp) {
           /* truly void, because dXSARGS not invoked */
-	  PL_markstack_ptr = temp;
-	  XSRETURN_EMPTY; /* return empty stack */
+          PL_markstack_ptr = temp;
+          XSRETURN_EMPTY; /* return empty stack */
         }
         /* must have used dXSARGS; list context implied */
-	return; /* assume stack size is correct */
+        return; /* assume stack size is correct */
 
 SV *
 nv_type ()
-		
+CODE:
+  RETVAL = nv_type (aTHX);
+OUTPUT:  RETVAL
 
-SV *
+
+unsigned long
 mant_dig ()
-		
+
 
 void
 _ld2binary (ld, flag)
 	SV *	ld
 	long	flag
-	PREINIT:
-	I32* temp;
-	PPCODE:
-	temp = PL_markstack_ptr++;
-	_ld2binary(ld, flag);
-	if (PL_markstack_ptr != temp) {
+        PREINIT:
+        I32* temp;
+        PPCODE:
+        temp = PL_markstack_ptr++;
+        _ld2binary(aTHX_ ld, flag);
+        if (PL_markstack_ptr != temp) {
           /* truly void, because dXSARGS not invoked */
-	  PL_markstack_ptr = temp;
-	  XSRETURN_EMPTY; /* return empty stack */
+          PL_markstack_ptr = temp;
+          XSRETURN_EMPTY; /* return empty stack */
         }
         /* must have used dXSARGS; list context implied */
-	return; /* assume stack size is correct */
+        return; /* assume stack size is correct */
 
 void
 _ld_str2binary (ld, flag)
 	char *	ld
 	long	flag
-	PREINIT:
-	I32* temp;
-	PPCODE:
-	temp = PL_markstack_ptr++;
-	_ld_str2binary(ld, flag);
-	if (PL_markstack_ptr != temp) {
+        PREINIT:
+        I32* temp;
+        PPCODE:
+        temp = PL_markstack_ptr++;
+        _ld_str2binary(aTHX_ ld, flag);
+        if (PL_markstack_ptr != temp) {
           /* truly void, because dXSARGS not invoked */
-	  PL_markstack_ptr = temp;
-	  XSRETURN_EMPTY; /* return empty stack */
+          PL_markstack_ptr = temp;
+          XSRETURN_EMPTY; /* return empty stack */
         }
         /* must have used dXSARGS; list context implied */
-	return; /* assume stack size is correct */
+        return; /* assume stack size is correct */
 
 SV *
 _bug_95e20 ()
-		
+CODE:
+  RETVAL = _bug_95e20 (aTHX);
+OUTPUT:  RETVAL
+
 
 SV *
 _bug_1175557635e10 ()
-		
+CODE:
+  RETVAL = _bug_1175557635e10 (aTHX);
+OUTPUT:  RETVAL
+
 
