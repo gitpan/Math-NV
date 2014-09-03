@@ -7,17 +7,19 @@ require Exporter;
 *import = \&Exporter::import;
 require DynaLoader;
 
-$Math::NV::VERSION = '0.03';
+$Math::NV::VERSION = '0.04';
 
 DynaLoader::bootstrap Math::NV $Math::NV::VERSION;
 
 @Math::NV::EXPORT = ();
 @Math::NV::EXPORT_OK = qw(
     nv nv_type mant_dig ld2binary ld_str2binary is_eq mant2binary mant_str2binary
+    bin2val Cprintf Csprintf
     );
 
 %Math::NV::EXPORT_TAGS = (all => [qw(
     nv nv_type mant_dig ld2binary ld_str2binary is_eq mant2binary mant_str2binary
+    bin2val Cprintf Csprintf
     )]);
 
 sub dl_load_flags {0} # Prevent DynaLoader from complaining and croaking
@@ -36,6 +38,29 @@ sub ld_str2binary {
   my $exp = pop(@ret);
   my $mantissa = join '', @ret;
   return ($mantissa, $exp, $prec);
+}
+
+sub bin2val {
+  my($mantissa, $exp, $prec) = (shift, shift, shift);
+  my $sign = $mantissa =~ /^\-/ ? '-' : '';
+  # Remove everything upto and including the radix point
+  # as it now contains no useful information.
+  $mantissa =~ s/.+\.//;
+  # For our purposes the values $prec and $exp need
+  # to be reduced by 1.
+  $exp--;
+
+  # Perl bugs make the following (commented out) code unreliable,
+  # so we now hand the calculations over to C.
+  # (And there's no need to decrement $prec.)
+  #$prec--;
+  #for(0..$prec) {
+  #  if(substr($mantissa, $_, 1)) {$val += 2**$exp}
+  #  $exp--;
+  #}
+  my @mantissa = split //, $mantissa;
+  my $val = _bin2val($prec, $exp, \@mantissa);
+  $sign eq '-' ? return -$val : return $val;
 }
 
 sub is_eq {
@@ -130,30 +155,35 @@ Math::NV - assign correct value to perl's NV
    ($mantissa, $exponent, $precision) = ld2binary($nv, $flag);
 
     Uses code taken from tests/tset_ld.c in the mpfr library source
-    and returns a base 2 representation of the long double value contained
-    in the NV $nv.
+    and returns a base 2 representation of the value contained in the
+    NV $nv - irrespective of whether the NV type ($Config{nvtype}) is
+    double or long double.
     If $flag is true, it also prints out additional information during
     calculation.
     $mantissa is the mantissa (significand).
     $exponent is the exponent.
     $precision is the precision (in bits) of the mantissa - trailing
     zero bits are not counted.
-    For doubles, use Data::Float's float_hex($nv) - which also works
-    for long double NV's on most architectures (but not powerpc).
+
 
    ($mantissa, $exponent, $precision) = ld_str2binary($str, $flag);
 
     Uses code taken from tests/tset_ld.c in the mpfr library source
-    and returns a base 2 representation of the long double value
-    represented by the string $str.
+    and returns a base 2 representation of the value of the NV
+    represented by the string $str - irrespective of whether the NV
+    type ($Config{nvtype}) is double or long double.
     If $flag is true, it also prints out additional information during
     calculation.
     $mantissa is the mantissa (significand).
     $exponent is the exponent.
     $precision is the precision (in bits) of the mantissa - trailing
     zero bits are not counted.
-    For doubles, use Data::Float's float_hex($str) - which also works
-    for long double NV's on most architectures (but not powerpc).
+
+   $nv = bin2val($mantissa, $exponent, $precision);
+
+    Takes the return values of ld_str2binary() or ld2binary() and
+    returns the original NV. (Probably doesn't work if the original
+    NV is an inf or a nan.)
 
    $mantissa = mant2binary($nv);
 
@@ -165,11 +195,22 @@ Math::NV - assign correct value to perl's NV
     Returns a base 2 representation of the mantissa of the value
     represented by $str. (Also uses perl's unpack/pack functions.)
 
+   Cprintf($fmt, $nv);
+    Uses C's printf() function to format the NV $nv, according to the
+    formatting specified by the string $fmt.
+
+   $string = Csprintf($fmt, $nv, $buffer_size);
+    Uses C's sprintf() function to format the NV $nv, according to the
+    formatting specified by the string $fmt - and returns the result to
+    $string. It's the responsibility of the caller to ensure that
+    $buffer_size specifies a large enough (at least) number of characters
+    to accommodate C's sprintf formatting of $nv.
+
 =head1 LICENSE
 
    This program is free software; you may redistribute it and/or modify
    it under the same terms as Perl itself.
-   Copyright 2013 Sisyphus
+   Copyright 2013-14 Sisyphus
 
 
 =head1 AUTHOR

@@ -21,6 +21,10 @@
 #endif
 #endif
 
+#ifndef Newx
+#  define Newx(v,n,t) New(0,v,n,t)
+#endif
+
 void nv(pTHX_ char * str) {
    dXSARGS;
    char * unparsed;
@@ -74,7 +78,7 @@ int Isnan_ld (long double d) {
 void _ld2binary (pTHX_ SV * ld, long flag) {
 
   dXSARGS;
-  long double d = SvNV(ld);
+  long double d = (long double)SvNV(ld);
   long double e;
   int exp = 1;
   unsigned long int prec = 0;
@@ -161,13 +165,16 @@ void _ld_str2binary (pTHX_ char * ld, long flag) {
 
   dXSARGS;
   long double d;
-  char *ptr;
   long double e;
   int exp = 1;
   unsigned long int prec = 0;
   int returns = 0;
 
-  d = strtold(ld, &ptr);
+#ifdef NV_IS_LONG_DOUBLE
+  d = strtold(ld, NULL);
+#else
+  d = (long double)strtod(ld, NULL);
+#endif
 
   sp = mark;
 
@@ -246,6 +253,30 @@ void _ld_str2binary (pTHX_ char * ld, long flag) {
   XSRETURN(returns);
 }
 
+SV * _bin2val(pTHX_  SV * precision, SV * exponent, SV * bin) {
+  IV i, prec;
+  prec = SvIV(precision);
+
+#ifdef NV_IS_LONG_DOUBLE
+  long double d = 0.0L;
+  long double exp  = (long double)SvNV(exponent);
+  for(i = 0; i < prec; i++) {
+    if(SvIV(*(av_fetch((AV*)SvRV(bin), i, 0)))) d += powl(2.0L, exp);
+    exp -= 1.0L;
+  }
+
+#else
+  double d = 0.0;
+  double exp  = (double)SvNV(exponent);
+  for(i = 0; i < prec; i++) {
+    if(SvIV(*(av_fetch((AV*)SvRV(bin), i, 0)))) d += pow(2.0, exp);
+    exp -= 1.0;
+  }
+#endif
+
+  return newSVnv(d);
+}
+
 SV * _bug_95e20(pTHX) {
 #ifdef NV_IS_LONG_DOUBLE
   return newSVnv(95e20L);
@@ -260,6 +291,35 @@ SV * _bug_1175557635e10(pTHX) {
 #else
   return newSVnv(1175557635e10);
 #endif
+}
+
+void Cprintf(pTHX_ char * fmt, SV * nv) {
+
+#ifdef NV_IS_LONG_DOUBLE
+  printf(fmt, (long double)SvNV(nv));
+#else
+  printf(fmt, (double)SvNV(nv));
+#endif
+
+}
+
+void Csprintf(pTHX_ char * fmt, SV * nv, int size) {
+   dXSARGS;
+   char * out;
+
+   Newx(out, size, char);
+   if(out == NULL) croak("Failed to allcoate memory in Csprintf function");
+
+#ifdef NV_IS_LONG_DOUBLE
+   sprintf(out, fmt, (long double)SvNV(nv));
+#else
+   sprintf(out, fmt, (double)SvNV(nv));
+#endif
+
+   ST(0) = sv_2mortal(newSVpv(out, 0));
+   Safefree(out);
+   XSRETURN(1);
+
 }
 MODULE = Math::NV  PACKAGE = Math::NV
 
@@ -328,6 +388,15 @@ _ld_str2binary (ld, flag)
         return; /* assume stack size is correct */
 
 SV *
+_bin2val (precision, exponent, bin)
+	SV *	precision
+	SV *	exponent
+	SV *	bin
+CODE:
+  RETVAL = _bin2val (aTHX_ precision, exponent, bin);
+OUTPUT:  RETVAL
+
+SV *
 _bug_95e20 ()
 CODE:
   RETVAL = _bug_95e20 (aTHX);
@@ -340,4 +409,39 @@ CODE:
   RETVAL = _bug_1175557635e10 (aTHX);
 OUTPUT:  RETVAL
 
+
+void
+Cprintf (fmt, nv)
+	char *	fmt
+	SV *	nv
+        PREINIT:
+        I32* temp;
+        PPCODE:
+        temp = PL_markstack_ptr++;
+        Cprintf(aTHX_ fmt, nv);
+        if (PL_markstack_ptr != temp) {
+          /* truly void, because dXSARGS not invoked */
+          PL_markstack_ptr = temp;
+          XSRETURN_EMPTY; /* return empty stack */
+        }
+        /* must have used dXSARGS; list context implied */
+        return; /* assume stack size is correct */
+
+void
+Csprintf (fmt, nv, size)
+	char *	fmt
+	SV *	nv
+	int	size
+        PREINIT:
+        I32* temp;
+        PPCODE:
+        temp = PL_markstack_ptr++;
+        Csprintf(aTHX_ fmt, nv, size);
+        if (PL_markstack_ptr != temp) {
+          /* truly void, because dXSARGS not invoked */
+          PL_markstack_ptr = temp;
+          XSRETURN_EMPTY; /* return empty stack */
+        }
+        /* must have used dXSARGS; list context implied */
+        return; /* assume stack size is correct */
 
